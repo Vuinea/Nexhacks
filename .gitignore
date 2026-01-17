@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Build Output (Parcel creates this)
+dist/
+.parcel-cache/
+
+# Secrets (API Keys)
+.env
+.env.local
+.DS_Store

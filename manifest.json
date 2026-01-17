@@ -1,11 +1,12 @@
 {
     "manifest_version": 3,
-    "name": "Hello World Extension",
+    "name": "Live Webpage Reader",
     "version": "1.0",
-    "description": "My first Chrome extension.",
-    "action": {
-      "default_popup": "popup.html"
+    "permissions": ["sidePanel"], 
+    "side_panel": {
+      "default_path": "popup.html"
     },
-    "permissions": []
+    "background": {
+      "service_worker": "dist/background-source.js"
+    }
   }
-  
