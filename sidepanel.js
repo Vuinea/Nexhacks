@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
+import { marked } from "marked";
+import DOMPurify from 'dompurify'
 
 // dealing with getting the page data
 
@@ -102,11 +103,12 @@ chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = messageInput.value.trim();
   if (!userMessage) return;
+  messageInput.disabled = true;
   renderMessage(userMessage, 'user');
   messageInput.value = '';
 
   renderMessage(await getResponse(pageContent, userMessage), 'ai');
-
+  messageInput.disabled = false;
   messageInput.focus();
 })
 
@@ -121,7 +123,9 @@ function renderMessage(content, sender) {
   avatar.textContent = sender === 'user' ? 'You' : 'AI';
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  bubble.textContent = content;
+  const rawContent = marked.parse(content);
+  const cleanContent = DOMPurify.sanitize(rawContent);
+  bubble.innerHTML = cleanContent;
   if (sender === 'user') {
     messageElement.appendChild(bubble);
     messageElement.appendChild(avatar);

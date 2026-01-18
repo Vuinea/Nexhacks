@@ -66,6 +66,15 @@
       background: #19c37d;
       color: #fff;
     }
+
+    .bubble p {
+      margin-top: 0;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
     .input-area {
       display: flex;
       gap: 0.5rem;
@@ -96,6 +105,12 @@
     .input-area button:hover {
       background: #15a76a;
     }
+
+    #message-input:disabled {
+      background-color: #22232a;
+      cursor: not-allowed;
+    }
+
   </style>
 </head>
 <body>
