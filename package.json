@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@google/genai": "^1.37.0",
     "@overshoot/sdk": "^0.1.0-alpha.2",
     "install": "^0.13.0",
     "npm": "^11.7.0"

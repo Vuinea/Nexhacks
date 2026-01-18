@@ -1,7 +1,24 @@
 import { RealtimeVision } from '@overshoot/sdk';
+import { GoogleGenAI } from "@google/genai";
+
+const geminiKey = process.env.GEMINI_API_KEY;
+
+// The client gets the API key from the environment variable `GEMINI_API_KEY`.
+const ai = new GoogleGenAI({"apiKey": geminiKey});
+
+
+async function getResponse(prompt) {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: prompt,
+  });
+
+  return response;
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    
+  
     const startBtn = document.getElementById('greetBtn');
     const outputEl = document.getElementById('output');
 
