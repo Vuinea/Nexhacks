@@ -1,63 +1,56 @@
-const message = document.querySelector("#message");
+const chatWindow = document.getElementById('chat-window');
+const chatForm = document.getElementById('chat-form');
+const messageInput = document.getElementById('message-input');
+
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('loaded...');
-  // chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
-  //     const activeTab = tabs[0];
-  //     const activeTabId = activeTab.id;
-  //     return chrome.scripting.executeScript({
-  //         target: { tabId: activeTabId },
-  //         // injectImmediately: true,  // uncomment this to make it execute straight away, other wise it will wait for document_idle
-  //         func: DOMtoString,
-  //         // args: ['body']  // you can use this to target what element to get the html for
-  //     });
-  // }).then(function (results) {
-  //     message.innerText = results[0].result;
-  // }).catch(function (error) {
-  //     message.innerText = 'There was an error injecting script : \n' + error.message;
-  // });
 
-  // const chatWindow = document.getElementById('chat-window');
-  // const chatForm = document.getElementById('chat-form');
-  // const messageInput = document.getElementById('message-input');
+  if (!chatWindow || !chatForm || !messageInput) return;
 
-  // if (!chatWindow || !chatForm || !messageInput) return;
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userMessage = messageInput.value.trim();
+    if (!userMessage) return;
+    renderMessage(userMessage, 'user');
+    messageInput.value = '';
+    // Simulate AI response (replace with Overshoot query if needed)
+    setTimeout(() => {
+      renderMessage(`This is a sample AI response. (You can connect to Overshoot here.)
+        Hello my name is Shahbaz Satti and this is a test for multi line capabilities of the css
+        because it might look really bad otherwise.
+        
+        `, 'ai');
+    }, 800);
+  });
 
-  // function renderMessage(content, sender) {
-  //   const messageElement = document.createElement('div');
-  //   messageElement.className = `message ${sender}`;
-  //   const avatar = document.createElement('div');
-  //   avatar.className = 'avatar';
-  //   avatar.textContent = sender === 'user' ? 'You' : 'AI';
-  //   const bubble = document.createElement('div');
-  //   bubble.className = 'bubble';
-  //   bubble.textContent = content;
-  //   if (sender === 'user') {
-  //     messageElement.appendChild(bubble);
-  //     messageElement.appendChild(avatar);
-  //   } else {
-  //     messageElement.appendChild(avatar);
-  //     messageElement.appendChild(bubble);
-  //   }
-  //   chatWindow.appendChild(messageElement);
-  //   chatWindow.scrollTop = chatWindow.scrollHeight;
-  // }
-
-  // chatForm.addEventListener('submit', async (e) => {
-  //   e.preventDefault();
-  //   const userMessage = messageInput.value.trim();
-  //   if (!userMessage) return;
-  //   renderMessage(userMessage, 'user');
-  //   messageInput.value = '';
-  //   // Simulate AI response (replace with Overshoot query if needed)
-  //   setTimeout(() => {
-  //     renderMessage('This is a sample AI response. (You can connect to Overshoot here.)', 'ai');
-  //   }, 800);
-  // });
-
-  // messageInput.focus();
+  messageInput.focus();
 });
 
+
+// rendering the message to the user
+function renderMessage(content, sender) {
+  const messageElement = document.createElement('div');
+  messageElement.className = `message ${sender}`;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = sender === 'user' ? 'You' : 'AI';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  if (sender === 'user') {
+    messageElement.appendChild(bubble);
+    messageElement.appendChild(avatar);
+  } else {
+    messageElement.appendChild(avatar);
+    messageElement.appendChild(bubble);
+  }
+  chatWindow.appendChild(messageElement);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+
+// dealing with getting the page data
 
 // 1. Declare your variable at the top level
 let pageContent = ""; 
@@ -117,3 +110,5 @@ function isRestricted(url) {
 function getPageText() {
   return document.body.innerText;
 }
+
+
