@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Overshoot Screen Vision Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #222; color: #fff; margin: 0; padding: 2rem; }
+    #start { font-size: 1.2rem; padding: 0.7rem 1.5rem; border-radius: 0.5rem; border: none; background: #19c37d; color: #fff; cursor: pointer; }
+    #start:hover { background: #15a76a; }
+    #apples { margin: 20px 0; text-align: center; }
+    #apples img { max-width: 100px; margin: 0 10px; }
+    #preview { max-width: 400px; border: 1px solid #ccc; border-radius: 0.5rem; margin: 1rem 0; display: block; }
+    #results { background: #f0f0f0; color: #222; padding: 10px; max-height: 300px; overflow: auto; border-radius: 0.5rem; }
+    h1, h3 { color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Overshoot Vision Test</h1>
+  <div style="margin-bottom: 1rem;">
+    <button id="start-front">Start Front Camera</button>
+    <button id="start-back">Start Back Camera</button>
+    <button id="start-screen">Start Screen Share</button>
+    <button id="record-analyze">Record Screen and Analyze</button>
+    <input type="file" id="videoFile" accept="video/*" style="margin-left:1rem;">
+    <label for="videoFile" style="color:#fff;">Analyze Video File</label>
+  </div>
+  <div>
+    <video id="preview" autoplay muted controls style="display:none;"></video>
+  </div>
+  <div id="apples"></div>
+  <div>
+    <h3>Overshoot Results</h3>
+    <pre id="results"></pre>
+  </div>
+  <script type="module">
+    async function recordScreenAndAnalyze() {
+      if (window._recordingActive) return;
+      window._recordingActive = true;
+      document.getElementById('preview').style.display = 'block';
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        const preview = document.getElementById('preview');
+        preview.srcObject = stream;
+        let chunkCount = 0;
+        let mediaRecorder;
+        let waitingForResponse = false;
+        let chunksQueue = [];
+
+        function processNextChunk() {
+          if (waitingForResponse || chunksQueue.length === 0) return;
+          const event = chunksQueue.shift();
+          if (!event || !event.data || event.data.size === 0) return processNextChunk();
+          chunkCount++;
+          logResult(`Sending chunk #${chunkCount} for analysis...`);
+          const file = new File([event.data], `chunk${chunkCount}.webm`, { type: 'video/webm' });
+          waitingForResponse = true;
+          try {
+            const vision = new RealtimeVision({
+              apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+              apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+              prompt: 'Describe what you see',
+              source: { type: 'video', file },
+              onResult: (result) => {
+                logResult(`Overshoot output for chunk #${chunkCount}:`);
+                logResult(result);
+                waitingForResponse = false;
+                processNextChunk();
+              }
+            });
+            vision.start();
+            logResult(`vision.start() called for chunk #${chunkCount}`);
+          } catch (err) {
+            logResult(`Overshoot error for chunk #${chunkCount}: ${err.message}`);
+            waitingForResponse = false;
+            processNextChunk();
+          }
+        }
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+        mediaRecorder.ondataavailable = (event) => {
+          chunksQueue.push(event);
+          processNextChunk();
+        };
+        mediaRecorder.onstop = () => {
+          window._recordingActive = false;
+          logResult('Screen recording stopped.');
+        };
+        mediaRecorder.start(2000); // 2 second chunks
+        logResult('Started screen recording and chunked analysis.');
+        // Optional: stop after 12 seconds
+        setTimeout(() => { mediaRecorder.stop(); }, 12000);
+      } catch (err) {
+        window._recordingActive = false;
+        logResult('Screen record error: ' + err.message);
+      }
+    }
+
+    import { RealtimeVision } from 'https://cdn.jsdelivr.net/npm/@overshoot/sdk/+esm';
+
+    let vision;
+    let appleVisible = true;
+    let toggleInterval;
+
+    // Toggle apple image every 5 seconds
+    function toggleApple() {
+      const applesDiv = document.getElementById('apples');
+      applesDiv.innerHTML = '';
+      if (appleVisible) {
+        const img = document.createElement('img');
+        img.src = 'https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg';
+        img.alt = 'Apple';
+        applesDiv.appendChild(img);
+      }
+      appleVisible = !appleVisible;
+    }
+    toggleApple();
+    toggleInterval = setInterval(toggleApple, 5000);
+
+    function logResult(msg) {
+      const results = document.getElementById('results');
+      results.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
+      results.scrollTop = results.scrollHeight;
+    }
+
+
+    async function startCamera(cameraFacing) {
+      if (vision) vision.stop && vision.stop();
+      document.getElementById('preview').style.display = 'block';
+      try {
+        const constraints = {
+          video: { facingMode: cameraFacing }
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const preview = document.getElementById('preview');
+        preview.srcObject = stream;
+        vision = new RealtimeVision({
+          apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+          apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+          prompt: 'Read any visible text',
+          source: { type: 'camera', stream }
+        });
+        vision.onResult = (result) => logResult(result);
+        vision.start();
+        logResult('Started camera vision analysis (' + cameraFacing + ').');
+      } catch (err) {
+        logResult('Camera error: ' + err.message);
+      }
+    }
+
+    async function startScreenShare() {
+      if (vision) vision.stop && vision.stop();
+      document.getElementById('preview').style.display = 'block';
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        const preview = document.getElementById('preview');
+        preview.srcObject = stream;
+        vision = new RealtimeVision({
+          apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+          apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+          prompt: 'Read any visible text',
+          source: { type: 'camera', stream }
+        });
+        vision.onResult = (result) => logResult(result);
+        vision.start();
+        logResult('Started screen sharing vision analysis.');
+      } catch (err) {
+        logResult('Screen share error: ' + err.message);
+      }
+    }
+
+    document.getElementById('start-front').onclick = () => startCamera('user');
+    document.getElementById('start-back').onclick = () => startCamera('environment');
+    document.getElementById('start-screen').onclick = () => startScreenShare();
+    document.getElementById('record-analyze').onclick = () => recordScreenAndAnalyze();
+
+    document.getElementById('videoFile').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('preview').style.display = 'block';
+      const url = URL.createObjectURL(file);
+      const preview = document.getElementById('preview');
+      preview.srcObject = null;
+      preview.src = url;
+      preview.play();
+      if (vision) vision.stop && vision.stop();
+      vision = new RealtimeVision({
+        apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+        apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+        prompt: 'Describe what you see',
+        source: { type: 'video', file }
+      });
+      vision.onResult = (result) => logResult(result);
+      vision.start();
+      logResult('Started video file analysis.');
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Overshoot Camera Vision Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #222; color: #fff; margin: 0; padding: 2rem; }
+    #start { font-size: 1.2rem; padding: 0.7rem 1.5rem; border-radius: 0.5rem; border: none; background: #19c37d; color: #fff; cursor: pointer; }
+    #start:hover { background: #15a76a; }
+    #preview { max-width: 400px; border: 1px solid #ccc; border-radius: 0.5rem; margin: 1rem 0; display: block; }
+    #results { background: #f0f0f0; color: #222; padding: 10px; max-height: 300px; overflow: auto; border-radius: 0.5rem; }
+    h1, h3 { color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Overshoot Camera Vision Test</h1>
+  <button id="start">Start Camera Test</button>
+  <div>
+    <video id="preview" autoplay muted playsinline></video>
+  </div>
+  <div>
+    <h3>Overshoot Results</h3>
+    <pre id="results"></pre>
+  </div>
+  <script type="module">
+    import { RealtimeVision } from 'https://cdn.jsdelivr.net/npm/@overshoot/sdk/+esm';
+
+    let vision;
+    document.getElementById('start').onclick = async () => {
+      if (vision) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        const preview = document.getElementById('preview');
+        preview.srcObject = stream;
+        vision = new RealtimeVision({
+          apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+          apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+          prompt: 'Read any visible text',
+          source: { type: 'camera', cameraFacing: 'environment', stream },
+          onResult: (result) => {
+            const results = document.getElementById('results');
+            results.textContent += (typeof result === 'string' ? result : JSON.stringify(result, null, 2)) + "\n";
+            results.scrollTop = results.scrollHeight;
+          }
+        });
+        vision.start();
+        const results = document.getElementById('results');
+        results.textContent += 'Started camera vision analysis.\n';
+      } catch (err) {
+        const results = document.getElementById('results');
+        results.textContent += 'Camera error: ' + err.message + '\n';
+      }
+    };
+  </script>
+</body>
+</html>

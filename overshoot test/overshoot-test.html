@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Overshoot Vision Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #222; color: #fff; margin: 0; padding: 2rem; }
+    #result { margin-top: 2rem; background: #333; padding: 1rem; border-radius: 0.5rem; min-height: 2rem; }
+    #start { font-size: 1.2rem; padding: 0.7rem 1.5rem; border-radius: 0.5rem; border: none; background: #19c37d; color: #fff; cursor: pointer; }
+    #start:hover { background: #15a76a; }
+  </style>
+</head>
+<body>
+  <h1>Overshoot Vision Test (Browser)</h1>
+  <button id="start">Start Vision</button>
+  <div id="result">Result will appear here...</div>
+  <script type="module">
+    import { RealtimeVision } from 'https://cdn.jsdelivr.net/npm/@overshoot/sdk/+esm';
+    const vision = new RealtimeVision({
+      apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+      apiKey: 'ovs_2959bb71127b526a2e529f09ef41d881',
+      prompt: 'Describe what is happening on the screen',
+      onResult: (result) => {
+        if (result.result) {
+          document.getElementById('result').textContent = result.result;
+        }
+      }
+    });
+    document.getElementById('start').onclick = () => vision.start();
+  </script>
+</body>
+</html>
