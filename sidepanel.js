@@ -1,53 +1,4 @@
-const chatWindow = document.getElementById('chat-window');
-const chatForm = document.getElementById('chat-form');
-const messageInput = document.getElementById('message-input');
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('loaded...');
-
-  if (!chatWindow || !chatForm || !messageInput) return;
-
-  chatForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const userMessage = messageInput.value.trim();
-    if (!userMessage) return;
-    renderMessage(userMessage, 'user');
-    messageInput.value = '';
-    // Simulate AI response (replace with Overshoot query if needed)
-    setTimeout(() => {
-      renderMessage(`This is a sample AI response. (You can connect to Overshoot here.)
-        Hello my name is Shahbaz Satti and this is a test for multi line capabilities of the css
-        because it might look really bad otherwise.
-        
-        `, 'ai');
-    }, 800);
-  });
-
-  messageInput.focus();
-});
-
-
-// rendering the message to the user
-function renderMessage(content, sender) {
-  const messageElement = document.createElement('div');
-  messageElement.className = `message ${sender}`;
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar';
-  avatar.textContent = sender === 'user' ? 'You' : 'AI';
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  bubble.textContent = content;
-  if (sender === 'user') {
-    messageElement.appendChild(bubble);
-    messageElement.appendChild(avatar);
-  } else {
-    messageElement.appendChild(avatar);
-    messageElement.appendChild(bubble);
-  }
-  chatWindow.appendChild(messageElement);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-}
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 // dealing with getting the page data
@@ -110,5 +61,79 @@ function isRestricted(url) {
 function getPageText() {
   return document.body.innerText;
 }
+
+
+// gemini
+const geminiKey = process.env.GEMINI_API_KEY; 
+const genAI = new GoogleGenerativeAI(geminiKey);
+
+async function getResponse(context, prompt) {
+  // 3. DEFINE THE MODEL (This was missing in your code!)
+  const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+  try {
+    // 4. Generate Content
+    const result = await model.generateContent({
+      contents: [{
+        parts: [{ text: `Context:\n${context}\n\nQuestion:\n${prompt}` }]
+      }]
+    });
+
+    const response = await result.response;
+    return response.text();
+    
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "Error: Could not reach AI.";
+  }
+}
+
+
+
+// chat window
+const chatWindow = document.getElementById('chat-window');
+const chatForm = document.getElementById('chat-form');
+const messageInput = document.getElementById('message-input');
+
+
+chatForm.addEventListener('submit', async (e) => {
+  if (!chatWindow || !chatForm || !messageInput) return;
+
+  e.preventDefault();
+  const userMessage = messageInput.value.trim();
+  if (!userMessage) return;
+  renderMessage(userMessage, 'user');
+  messageInput.value = '';
+
+  renderMessage(await getResponse(pageContent, userMessage), 'ai');
+
+  messageInput.focus();
+})
+
+
+
+// rendering the message to the user
+function renderMessage(content, sender) {
+  const messageElement = document.createElement('div');
+  messageElement.className = `message ${sender}`;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = sender === 'user' ? 'You' : 'AI';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  if (sender === 'user') {
+    messageElement.appendChild(bubble);
+    messageElement.appendChild(avatar);
+  } else {
+    messageElement.appendChild(avatar);
+    messageElement.appendChild(bubble);
+  }
+  chatWindow.appendChild(messageElement);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+
+
 
 
